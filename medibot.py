@@ -77,7 +77,7 @@ def main():
 
             result = response["result"]
             source_documents = response["source_documents"]
-            result_to_show = result + "\nSource Docs:\n" + str(source_documents)
+            result_to_show = result
             #response = "Hi, I am MediBot!"
             st.chat_message('assistant').markdown(result_to_show)
             st.session_state.messages.append({'role' : 'assistant', 'content' : result_to_show})

@@ -14,10 +14,10 @@ huggingface_repo_id = "mistralai/Mistral-7B-Instruct-v0.3"
 
 def load_llm(huggingface_repo_id):
     llm = HuggingFaceEndpoint(
-        repo_id=huggingface_repo_id,
-        task="text-generation",
-        temperature=0.5,
-        model_kwargs={
+        repo_id = huggingface_repo_id,
+        task = "text-generation",
+        temperature = 0.5,
+        model_kwargs = {
             "max_length": 512,
             "token": HF_TOKEN,
         }
@@ -38,14 +38,14 @@ Start the answer directly. No small talk please.
 """
 
 def set_custom_prompt(custom_prompt_template):
-    prompt = PromptTemplate(template=custom_prompt_template, input_variables=["context", "question"])
+    prompt = PromptTemplate(template = custom_prompt_template, input_variables = ["context", "question"])
     return prompt
 
 # Load Database
 
 DB_FAISS_PATH = "vectorstore/db_faiss"
-embedding_model = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
-db = FAISS.load_local(DB_FAISS_PATH, embedding_model, allow_dangerous_deserialization=True)
+embedding_model = HuggingFaceEmbeddings(model_name = "sentence-transformers/all-MiniLM-L6-v2")
+db = FAISS.load_local(DB_FAISS_PATH, embedding_model, allow_dangerous_deserialization = True)
 
 # Create QA chain
 
