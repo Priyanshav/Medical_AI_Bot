@@ -1,65 +1,93 @@
 import os
-
-from langchain_huggingface import HuggingFaceEndpoint
+from dotenv import load_dotenv
+from langchain_groq import ChatGroq
+from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_core.prompts import PromptTemplate
 from langchain.chains import RetrievalQA
-from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
 
+load_dotenv()
 
-# Step 1: Setup LLM (Mistral with HuggingFace)
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+DB_FAISS_PATH = "vectorstore/db_faiss"
 
-HF_TOKEN = os.environ.get("HF_TOKEN")
-huggingface_repo_id = "mistralai/Mistral-7B-Instruct-v0.3"
-
-def load_llm(huggingface_repo_id):
-    llm = HuggingFaceEndpoint(
-        repo_id = huggingface_repo_id,
-        task = "text-generation",
-        temperature = 0.5,
-        model_kwargs = {
-            "max_length": 512,
-            "token": HF_TOKEN,
-        }
-    )
-    return llm
-
-# Step 2: Connect LLM with FAISS and Create chain
-
-custom_prompt_template = """
-Use the pieces of information provided in the context to answer user's question.
-If you dont know the answer, just say that you dont know, dont try to make up an answer. 
-Dont provide anything out of the given context
+CUSTOM_PROMPT_TEMPLATE = """
+You are a medical assistant. Use ONLY the context below to answer in detail.
+Explain thoroughly and include all relevant information from the context.
+If the answer is not in the context, say "I don't have that information in my documents."
+Do NOT use any outside knowledge.
 
 Context: {context}
 Question: {question}
 
-Start the answer directly. No small talk please.
-"""
+Detailed Answer:"""
 
-def set_custom_prompt(custom_prompt_template):
-    prompt = PromptTemplate(template = custom_prompt_template, input_variables = ["context", "question"])
-    return prompt
+# Step 1: Load LLM
+def load_llm():
+    if not GROQ_API_KEY:
+        raise ValueError("GROQ_API_KEY not set. Check your .env file.")
+    return ChatGroq(
+        model="llama-3.1-8b-instant",
+        temperature=0.5,
+        max_tokens=1024,
+        api_key=GROQ_API_KEY
+    )
 
-# Load Database
+# Step 2: Build prompt
+def set_custom_prompt(template):
+    return PromptTemplate(
+        template=template,
+        input_variables=["context", "question"]
+    )
 
-DB_FAISS_PATH = "vectorstore/db_faiss"
-embedding_model = HuggingFaceEmbeddings(model_name = "sentence-transformers/all-MiniLM-L6-v2")
-db = FAISS.load_local(DB_FAISS_PATH, embedding_model, allow_dangerous_deserialization = True)
+# Step 3: Load vectorstore
+def load_vectorstore():
+    if not os.path.exists(DB_FAISS_PATH):
+        raise FileNotFoundError(
+            f"Vectorstore not found at '{DB_FAISS_PATH}'. "
+            "Run create_memory_for_llm.py first."
+        )
+    embedding_model = HuggingFaceEmbeddings(
+        model_name="sentence-transformers/all-MiniLM-L6-v2"
+    )
+    db = FAISS.load_local(DB_FAISS_PATH, embedding_model, allow_dangerous_deserialization=True)
+    return db
 
-# Create QA chain
+# Step 4: Build QA chain
+def build_qa_chain():
+    db = load_vectorstore()
+    qa_chain = RetrievalQA.from_chain_type(
+        llm=load_llm(),
+        chain_type="stuff",
+        retriever=db.as_retriever(search_kwargs={'k': 5}),
+        return_source_documents=True,
+        chain_type_kwargs={'prompt': set_custom_prompt(CUSTOM_PROMPT_TEMPLATE)}
+    )
+    return qa_chain
 
-qa_chain = RetrievalQA.from_chain_type(
-    llm = load_llm(huggingface_repo_id),
-    chain_type = "stuff",
-    retriever = db.as_retriever(search_kwargs={'k' : 3}),
-    return_source_documents = True,
-    chain_type_kwargs = {'prompt' : set_custom_prompt(custom_prompt_template)}
-)
+if __name__ == "__main__":
+    if not GROQ_API_KEY:
+        print("❌ GROQ_API_KEY not set. Check your .env file.")
+        exit(1)
 
-# Now invoke with a single query
+    print("🔗 Loading vectorstore and LLM...")
+    qa_chain = build_qa_chain()
 
-user_query = input("Write Query Here: ")
-response = qa_chain.invoke({'query': user_query})
-print("RESULT: ", response["result"])
-print("SOURCE DOCUMENTS: ", response["source_documents"])
+    print("✅ Ready! Type 'exit' to quit.\n")
+
+    while True:
+        user_query = input("You: ").strip()
+        if user_query.lower() in ("exit", "quit"):
+            print("Goodbye!")
+            break
+        if not user_query:
+            continue
+
+        response = qa_chain.invoke({'query': user_query})
+        print(f"\n🤖 Answer: {response['result']}")
+        print("\n📚 Sources:")
+        for i, doc in enumerate(response["source_documents"], 1):
+            source = doc.metadata.get("source", "Unknown")
+            page = doc.metadata.get("page", "?")
+            print(f"  [{i}] {source} — page {page}")
+        print()
