@@ -11,7 +11,7 @@ User Question
      ↓
 FAISS Vector Search (finds relevant chunks from PDF)
      ↓
-Retrieved Context sent to Groq LLM (Llama 3.1)
+Retrieved Context sent to Groq LLM (GPT OSS 20B)
      ↓
 Answer strictly based on the document
 ```
@@ -23,7 +23,7 @@ Answer strictly based on the document
 | Component | Technology |
 |---|---|
 | Frontend | Streamlit |
-| LLM | Groq (Llama 3.1 8B Instant) |
+| LLM | Groq (OpenAI GPT OSS 20B) |
 | Embeddings | HuggingFace (all-MiniLM-L6-v2) |
 | Vector Store | FAISS |
 | Framework | LangChain |
