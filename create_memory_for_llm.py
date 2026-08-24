@@ -58,4 +58,4 @@ if __name__ == "__main__":
     print("💾 Building and saving FAISS vectorstore...")
     build_vectorstore(text_chunks, embedding_model)
 
-    print("\n🎉 Done! You can now run the app with: streamlit run app.py")
+    print("\n🎉 Done! You can now run the app with: streamlit run streamlit_app.py")

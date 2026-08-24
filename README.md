@@ -40,7 +40,7 @@ Medical_Chatbot/
 │   └── db_faiss/
 │       ├── index.faiss            # FAISS vector index
 │       └── index.pkl              # FAISS metadata
-├── app.py                         # Streamlit app
+├── streamlit_app.py               # Streamlit app
 ├── connect_memory_with_llm.py     # CLI version for testing
 ├── create_memory_for_llm.py       # Builds vectorstore from PDFs
 ├── requirements.txt               # Dependencies
@@ -93,7 +93,7 @@ python create_memory_for_llm.py
 
 ### 6. Run the app
 ```bash
-streamlit run app.py
+streamlit run streamlit_app.py
 ```
 
 Open your browser at `http://localhost:8501`
