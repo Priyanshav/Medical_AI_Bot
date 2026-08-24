@@ -27,7 +27,7 @@ def load_llm():
     if not GROQ_API_KEY:
         raise ValueError("GROQ_API_KEY not set. Check your .env file.")
     return ChatGroq(
-        model="llama-3.1-8b-instant",
+        model="openai/gpt-oss-20b",
         temperature=0.5,
         max_tokens=1024,
         api_key=GROQ_API_KEY

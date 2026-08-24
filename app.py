@@ -32,7 +32,7 @@ def get_vectorstore():
 @st.cache_resource
 def get_llm():
     return ChatGroq(
-        model="llama-3.1-8b-instant",
+        model="openai/gpt-oss-20b",
         temperature=0.5,
         max_tokens=1024,
         api_key=GROQ_API_KEY
